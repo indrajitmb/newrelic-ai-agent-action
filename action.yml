@@ -1,0 +1,48 @@
+name: 'NewRelic AI Agent'
+description: 'Automatically generate NewRelic observability for PR changes'
+author: 'Your Team'
+branding:
+  icon: 'activity'
+  color: 'blue'
+
+inputs:
+  claude-api-key:
+    description: 'Claude API key'
+    required: true
+  newrelic-api-key:
+    description: 'NewRelic API key'
+    required: true
+  github-token:
+    description: 'GitHub token'
+    required: true
+    default: ${{ github.token }}
+  pr-number:
+    description: 'Pull request number'
+    required: true
+    default: ${{ github.event.pull_request.number }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        
+    - name: Install dependencies
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        bundle install
+        
+    - name: Run agent
+      shell: bash
+      env:
+        CLAUDE_API_KEY: ${{ inputs.claude-api-key }}
+        NEWRELIC_API_KEY: ${{ inputs.newrelic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        cd ${{ github.action_path }}
+        ruby agent.rb
