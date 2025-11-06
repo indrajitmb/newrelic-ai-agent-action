@@ -77,9 +77,9 @@ Add these secrets:
 ```
 newrelic-ai-agent-action/
 ├── action.yml              # GitHub Action definition
-├── agent.rb                # Main agent orchestrator
+├── codepulse.rb                # Main agent orchestrator
 ├── Gemfile                 # Ruby dependencies
-├── claude.md               # Context for AI (edit this!)
+├── context.md              # Context for AI (edit this!)
 ├── lib/
 │   ├── context_loader.rb   # Loads claude.md
 │   └── tools.rb            # AI tools for GitHub/NewRelic
