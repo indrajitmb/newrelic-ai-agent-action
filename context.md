@@ -1,29 +1,150 @@
 # NewRelic AI Agent - Context & Configuration
 
-## Your Role
-You are an expert at analyzing code changes and generating NewRelic observability configurations.
+## Role
+Expert at analyzing code changes and generating NewRelic observability configurations.
 
 ## Platform Configuration Format
 
 ### Infrastructure.yml Configuration
-**INSTRUCTIONS: Copy content from Azure DevOps README below this line**
-
 URL: https://dev.azure.com/mindbody/mb2/_git/aws-arcus-services?path=%2FREADME.md
+Assumption: file would be present with existing default setup configuration.
 
 ---
-**TODO: PASTE THE FOLLOWING SECTIONS FROM AZURE DEVOPS:**
-1. Configuration for NewRelic Dashboards
-2. Example infrastructure.yml structure
-3. OneDashboardConfig schema
-4. OneDashboardTemplateConfig schema
-5. Alert configuration examples
----
+### Configuration for NewRelic Dashboards
+```
+# Configuration for New Relic Dashboards. Each array entry may use oneDashboardConfig or oneDashboardTemplateConfig but not both.
+newrelicDashboards:
+    # The primary name of the dashboard. Dashboards are prefixed with "{serviceName}: " by default. The name becomes the suffix by default.
+  - name: string
+    # Optional - used for configuring a custom dashboard with granular precision
+    # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#inputs for more
+    oneDashboardConfig:
+      # Optional - an override for the New Relic account. Defaults to the New Relic account which aligns to the Arcus environment.
+      accountId: number
+      # Optional - a description for the dashboard
+      description: string
+      # Optional - a name override for naming the dashboard
+      name: string
+      # Optional - permissions for the dashboard (manual updates to the dashboard may be overridden based on what's set in the infrastructure configuration)
+      # Valid values are private, public_read_only, or public_read_write. Defaults to public_read_only
+      permissions: string
+      # Optional - A nested block that describes a dashboard-local variable.
+      # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#onedashboardvariable for details
+      variables: OneDashboardVariableArgs[]
+      # The pages of the dashboard.
+      # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#onedashboardpage for more
+      pages: OneDashboardPageArgs[]
+    # Optional - used for configuring a templated dashboard
+    oneDashboardTemplateConfig:
+      # The identifier for the template being used. Must be a file named with the format "{templateName}.ts" in
+      # https://mindbody.visualstudio.com/mb2/_git/mbx-plugin-newrelic-dashboards?path=/src/templates/oneDashboard
+      # Currently, the valid values are service_basics_1, business_experience_page_basics, or default_k8s_basics
+      templateName: string
+      # Optional - key value pairs for replacing particular strings in the template. Used for customizing templates
+      # See the mbx-plugin-newrelic-dashboards README for example usage:
+      # https://mindbody.visualstudio.com/mb2/_git/mbx-plugin-newrelic-dashboards?path=/README.md&_a=preview&anchor=arcus-services-configuration-example
+      stringFindAndReplace:
+        key: value
+```
 
-### Frederick Repository Reference
-The `frederick` repository under workspace has an example `infrastructure.yml` file at:
-`workspace/infrastructure.yml`
-
-This shows the real-world format used by the platform.
+### Alert configuration examples
+```
+newrelic:
+  # The name of the alert policy
+  - name: string
+    # OPTIONAL
+    # The rollup strategy for the policy. Options include: PER_POLICY, PER_CONDITION,
+    # or PER_CONDITION_AND_TARGET. The default is PER_POLICY.
+    incidentPreference: string
+    # The New Relic entity name of your application.  This is the name that appears in New Relic
+    # APM for the application.
+    entityName: string
+    # Domain is `APM` for applications
+    entityDomain: string
+    # Optional - List of names for referencing which alert notification channels registerred in the `alertNotificationChannels` section will be used for this alert policy.
+    # The default value is ['default'].
+    alertNotificationChannels: [string]
+    # Deprecated: USE alertNotificationChannels instead.
+    # Array of Alert Channels to be assigned to this alert policy. OpsGenie, Slack etc channel names
+    channels: [string]
+    # Optional - Determines if newrelic resources should be protected from deletion
+    protect: boolean
+    # Optional - Priorities to alert on for New Relic Workflows, defaults to ['CRITICAL'].
+    # Issue's priority level (CRITICAL, HIGH, MEDIUM, LOW). (Warning alert conditions trigger HIGH priority level alerts.)
+    workflowPriorities: [string]
+    # Array of standard (APM) alert condition definitions
+    # At least one APM condition is required
+    alertConditions:
+      # Alert condition name - example high response time
+      - name: string
+        # The type of alert condition - `apm_app_metric` for conditions inside `alertConditions`
+        type: string
+        # Enabled - true / disabled - false
+        enabled: boolean
+        # Condition scope - `application` for APM alerts
+        conditionScope: string
+        # Metric - which metric will be tested for the condition e.g. response_time_web
+        metric: string
+        # Metric condition terms - what thresholds will be evaluated
+        terms:
+          # Duration - how long must the condition exist in minutes
+          - duration: number
+            # Operator - above or below
+            operator: string
+            # Priority - warning or critical
+            priority: string
+            # Threshold - above or below this metric, the condition will evaluate true, e.g.
+            # response time in seconds
+            threshold: number
+            # Time eval - `all`
+            timeFunction: string
+    nrqlAlertConditions:
+      # Name of the NRQL alert condition e.g. `App - High Percentage 500 Errors`
+      - name: string
+        # The method of the data aggregation window - EVENT_FLOW is recommended.
+        aggregationMethod: string
+        # Evaluation offset time in seconds - e.g. `300` (replaces nrql.evaluationOffset)
+        aggregationDelay: number
+        # Friendly description of the query
+        description: string
+        # Time slice type - `static`
+        type: string
+        # Enabled - true / disabled - false
+        enabled: boolean
+        # How long can the violation be in effect before resetting - e.g. `3600` (replaces violationTimeLimit)
+        violationTimeLimitSeconds: number
+        # The NRQL query definition
+        nrql:
+          # NRQL query language
+          query: string
+        # Set a Critical violation
+        critical:
+          # Is the threshold `above` or `below`
+          operator: string
+          # Threshold count based upon results of NRQL query
+          threshold: number
+          # How long must the threshold be breached to trigger the condition (in seconds)
+          thresholdDuration: number
+          # ?? Look up
+          thresholdOccurrences: ALL
+        warning:
+          operator: string
+          threshold: number
+          thresholdDuration: number
+          thresholdOccurrences: string
+        ## The below options support Loss of Signal and Gap Filling
+        # (Optional) The amount of time (in seconds) to wait before considering the signal expired
+        expirationDuration: number
+        # (Optional) Whether to create a new violation to capture that the signal expired
+        openViolationOnExpiration: boolean
+        # (Optional) Which strategy to use when filling gaps in the signal. Possible values are NONE, LAST_VALUE or STATIC.
+        # If STATIC, the fill_value field will # # be used for filling gaps in the signal.
+        fillOption: string
+        # (Optional, required when fill_option is static) This value will be used for filling gaps in the signal.
+        fillValue: number
+        # (Optional) Runbook URL to display in notifications.
+        runbookUrl: string
+```
 
 ## Decision Rules
 
@@ -62,15 +183,6 @@ WHERE appName = 'frederick'
 SINCE 1 hour ago
 TIMESERIES
 
--- Query 2: Response Time P95
-SELECT percentile(duration, 95) 
-FROM Transaction 
-WHERE appName = 'frederick' 
-  AND request.uri LIKE '/api/users/profile%'
-SINCE 1 hour ago
-TIMESERIES
-```
-
 ### Permanent Observability
 Suggest for:
 - New features requiring ongoing monitoring
@@ -86,7 +198,7 @@ Suggest for:
 - Internal refactoring with no behavior change
 - Documentation-only changes
 - Test file additions
-- Configuration changes that don't affect runtime behavior
+- Configuration changes that dont affect runtime behavior
 
 ## Analysis Approach
 
