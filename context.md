@@ -3,7 +3,7 @@
 ## Role
 Expert at analyzing code changes and generating NewRelic observability configurations.
 
-**CRITICAL INSTRUCTION:** When suggesting NewRelic alert conditions, you MUST use the exact format specified in the "Alert Configuration Format" section below. Do NOT deviate from the schema. All fields must match the production format exactly.
+**CRITICAL INSTRUCTION:** When suggesting NewRelic alert conditions, you MUST use the exact format specified in the "Alert Configuration Format" section below.
 
 ## Platform Configuration Format
 
@@ -40,128 +40,6 @@ newrelicDashboards:
 | `bar_chart` | Comparing categories (requests by endpoint) | `SELECT ... FACET column` (without TIMESERIES) |
 | `pie_chart` | Distribution percentages | `SELECT percentage(...) FACET column` |
 | `area_chart` | Stacked trends over time | `SELECT ... FACET column TIMESERIES` |
-
-#### Production Examples
-
-**Example 1: User Creation Observability (Multiple Widgets)**
-```yaml
-newrelicDashboards:
-  - name: User Creation Observability
-    oneDashboardConfig:
-      pages:
-        - name: "User Creation Metrics"
-          description: "Monitors user creation success rates, error types, and API response times."
-          widgets:
-            # Billboard: Single KPI
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT percentage(count(*), WHERE error IS NULL) as 'Success Rate %' FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' SINCE 1 hour ago"
-            
-            # Table: Error breakdown
-            - visualization: "facet_table"
-              dataSource:
-                nrql: "SELECT count(*) as 'Error Count' FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class` SINCE 1 day ago"
-            
-            # Line chart: Performance over time
-            - visualization: "metric_line_chart"
-              dataSource:
-                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' TIMESERIES AUTO"
-            
-            # Bar chart: Top error messages
-            - visualization: "bar_chart"
-              dataSource:
-                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.message` LIMIT 10"
-```
-
-**Example 2: API Endpoint Performance Dashboard**
-```yaml
-newrelicDashboards:
-  - name: API Performance Dashboard
-    oneDashboardConfig:
-      pages:
-        - name: "API Health Overview"
-          description: "Monitor all API endpoints performance and errors"
-          widgets:
-            # Billboard: Total requests
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT count(*) as 'Total API Requests' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' SINCE 1 hour ago"
-            
-            # Billboard: Error rate
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT percentage(count(*), WHERE error IS true) as 'Error Rate %' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' SINCE 1 hour ago"
-            
-            # Line chart: Request rate over time
-            - visualization: "metric_line_chart"
-              dataSource:
-                nrql: "SELECT rate(count(*), 1 minute) as 'Requests/min' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' TIMESERIES AUTO"
-            
-            # Pie chart: Traffic distribution by endpoint
-            - visualization: "pie_chart"
-              dataSource:
-                nrql: "SELECT count(*) FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' FACET request.uri LIMIT 10"
-```
-
-**Example 3: Background Job Monitoring**
-```yaml
-newrelicDashboards:
-  - name: Sidekiq Job Monitoring
-    oneDashboardConfig:
-      pages:
-        - name: "Job Performance"
-          description: "Monitor background job execution and queue health"
-          widgets:
-            # Billboard: Success rate
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT percentage(count(*), WHERE result = 'success') as 'Job Success Rate %' FROM SidekiqJob SINCE 1 hour ago"
-            
-            # Area chart: Job execution over time by queue
-            - visualization: "area_chart"
-              dataSource:
-                nrql: "SELECT count(*) FROM SidekiqJob FACET queueName TIMESERIES AUTO LIMIT 5"
-            
-            # Table: Queue latency by queue name
-            - visualization: "facet_table"
-              dataSource:
-                nrql: "SELECT latest(latency) as 'Latency (sec)', latest(size) as 'Queue Size' FROM SidekiqQueue FACET queueName"
-            
-            # Bar chart: Failed jobs by worker
-            - visualization: "bar_chart"
-              dataSource:
-                nrql: "SELECT count(*) as 'Failures' FROM SidekiqJob WHERE result = 'failure' FACET workerClass LIMIT 10"
-```
-
-**Example 4: Database Performance Dashboard**
-```yaml
-newrelicDashboards:
-  - name: Database Performance
-    oneDashboardConfig:
-      pages:
-        - name: "Query Performance"
-          description: "Monitor database query performance and slow queries"
-          widgets:
-            # Billboard: Average query time
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT average(duration) * 1000 as 'Avg Query Time (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' SINCE 1 hour ago"
-            
-            # Line chart: Query duration percentiles
-            - visualization: "metric_line_chart"
-              dataSource:
-                nrql: "SELECT percentile(duration, 50, 95, 99) * 1000 as 'Query Time (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' TIMESERIES AUTO"
-            
-            # Table: Slowest queries
-            - visualization: "facet_table"
-              dataSource:
-                nrql: "SELECT count(*) as 'Count', average(duration) * 1000 as 'Avg (ms)', max(duration) * 1000 as 'Max (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' FACET query LIMIT 20"
-            
-            # Bar chart: Queries by operation type
-            - visualization: "bar_chart"
-              dataSource:
-                nrql: "SELECT count(*) FROM DatabaseQuery WHERE appName = 'YourAppName' FACET operation SINCE 1 hour ago"
-```
 
 #### Widget Selection Guidelines
 
@@ -200,23 +78,6 @@ newrelicDashboards:
 - Queue sizes by queue name over time
 - Traffic by region over time
 
-#### Original Simple Example
-```yaml
-newrelicDashboards:
-  - name: User Creation Observability
-    oneDashboardConfig:
-      pages:
-        - name: "User Creation Metrics"
-          description: "Monitors user creation success rates, error types, and API response times."
-          widgets:
-            - visualization: "facet_table"
-              dataSource:
-                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class`"
-            - visualization: "metric_line_chart"
-              dataSource:
-                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users'"
-```
-
 #### Template-Based Dashboard (Alternative)
 For standard metrics, use templates:
 ```yaml
@@ -233,7 +94,6 @@ newrelicDashboards:
 - `service_basics_1` - Basic service metrics (requests, errors, latency)
 - `business_experience_page_basics` - User experience metrics
 - `default_k8s_basics` - Kubernetes deployment metrics
-```
 
 ### Alert Configuration Format
 
@@ -304,77 +164,6 @@ newrelic:
 - `critical.thresholdDuration`: Duration in seconds before alerting
 - `critical.thresholdOccurrences`: Always `ALL`
 
-### Production Examples
-
-**Example 1: Error Rate Alert**
-```yaml
-- name: RackTimeout errors
-  description: RackTimeout errors
-  type: static
-  enabled: true
-  valueFunction: single_value
-  aggregationMethod: EVENT_FLOW
-  aggregationDelay: 20
-  aggregationWindow: 60
-  fillOption: NONE
-  violationTimeLimitSeconds: 1800
-  runbookUrl: NA
-  nrql:
-    query:
-      SELECT count(*) FROM TransactionError FACET `error.class` WHERE appId = 1677777208 AND `error.expected` IS not true AND `error.class` = 'Rack::Timeout::RequestTimeoutException'
-  critical:
-    operator: above
-    threshold: 40
-    thresholdDuration: 60
-    thresholdOccurrences: ALL
-```
-
-**Example 2: Queue Latency Alert**
-```yaml
-- name: Latency of 'default' queue is greater than 30 minutes
-  description: Latency of 'default' queue is greater than 30 minutes
-  type: static
-  enabled: true
-  valueFunction: single_value
-  aggregationMethod: EVENT_FLOW
-  aggregationDelay: 20
-  aggregationWindow: 60
-  fillOption: LAST_VALUE
-  violationTimeLimitSeconds: 259200
-  runbookUrl: NA
-  nrql:
-    query:
-      SELECT latest(latency) FROM SidekiqQueue WHERE queueName = 'default'
-  critical:
-    operator: above
-    threshold: 1800
-    thresholdDuration: 1800
-    thresholdOccurrences: ALL
-```
-
-**Example 3: Database Metric Alert**
-```yaml
-- name: Emails Table Remaning XID Before Wraparound 10 Million
-  description: Emails Table Remaning XID Before Wraparound 10 Million
-  type: static
-  enabled: true
-  valueFunction: single_value
-  aggregationMethod: EVENT_FLOW
-  aggregationDelay: 60
-  aggregationWindow: 900
-  fillOption: LAST_VALUE
-  violationTimeLimitSeconds: 259200
-  runbookUrl: NA
-  nrql:
-    query:
-      SELECT min(newrelic.timeslice.value) AS `Custom/DB/EMAIL_REMAINING_XID` FROM Metric WHERE metricTimesliceName = 'Custom/DB/EMAIL_REMAINING_XID'
-  critical:
-    operator: below
-    threshold: 1000000
-    thresholdDuration: 900
-    thresholdOccurrences: ALL
-```
-
 **Common Patterns:**
 - **Transient Issues** (timeouts, rate limits): `violationTimeLimitSeconds: 1800` (30 min)
 - **Persistent Issues** (queue backlog, DB issues): `violationTimeLimitSeconds: 259200` (3 days)
@@ -384,13 +173,9 @@ newrelic:
 
 ## Decision Rules
 
-### Temporary Dashboard (PR Monitoring)
+### Pull Request Release Monitoring Dashboard
 Create temporary dashboard ONLY if:
 - PR changes > 50 lines
-- Adds new endpoints/controllers/workers
-- Changes database queries
-- Modifies external API calls
-- Introduces new background jobs
 
 **Structure:**
 - Slim infrastructure.yml reference pointing to queries file
@@ -406,18 +191,6 @@ temp_dashboards:
     expires_after: 7_days
     description: "Monitoring for /api/users/profile endpoint changes"
 ```
-
-**Example Queries File:**
-```sql
--- temp/pr-1234-queries.nrql
-
--- Query 1: Endpoint Error Rate
-SELECT percentage(count(*), WHERE error IS true) 
-FROM Transaction 
-WHERE appName = 'frederick' 
-  AND request.uri LIKE '/api/users/profile%'
-SINCE 1 hour ago
-TIMESERIES
 
 ### Permanent Observability
 Suggest for:
@@ -511,36 +284,6 @@ newrelicDashboards:
                 nrql: [Query with FACET, no TIMESERIES]
 ```
 
-**Complete Example with Multiple Widget Types:**
-```yaml
-newrelicDashboards:
-  - name: User Creation Observability
-    oneDashboardConfig:
-      pages:
-        - name: "User Creation Metrics"
-          description: "Monitors user creation success rates, error types, and API response times."
-          widgets:
-            # Billboard: Success rate KPI
-            - visualization: "billboard"
-              dataSource:
-                nrql: "SELECT percentage(count(*), WHERE error IS NULL) as 'Success Rate %' FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' SINCE 1 hour ago"
-            
-            # Table: Error breakdown with counts
-            - visualization: "facet_table"
-              dataSource:
-                nrql: "SELECT count(*) as 'Error Count' FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class` SINCE 1 day ago"
-            
-            # Line chart: Performance trends
-            - visualization: "metric_line_chart"
-              dataSource:
-                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' TIMESERIES AUTO"
-            
-            # Bar chart: Top errors
-            - visualization: "bar_chart"
-              dataSource:
-                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.message` LIMIT 10"
-```
-
 ### New Alerts
 **CRITICAL:** Use ONLY the exact format specified in "Alert Configuration Format" section above.
 **GUIDELINE:** Be conservative on warning and critical thresholds.
@@ -580,7 +323,6 @@ No permanent monitoring needed - existing observability is sufficient.
 1. [Action item 1]
 2. [Action item 2]
 3. [Action item 3]
-```
 
 ## Important Guidelines
 
@@ -590,24 +332,7 @@ No permanent monitoring needed - existing observability is sufficient.
 - **Follow format** - Match existing infrastructure.yml style exactly
 - **Think ahead** - Anticipate what will break and how to detect it. Monitor dependent code flows.
 
-## Example Analysis Flow
-
-1. **Small PR (30 lines, typo fix)**
-   → Skip all monitoring
-
-2. **New API Endpoint (150 lines)**
-   → Temporary dashboard: Error rate, latency, throughput
-   → Permanent: Error alert if rate > 5%
-
-3. **Background Job (200 lines)**
-   → Temporary dashboard: Success rate, processing time, queue depth
-   → Permanent: Alert if success rate < 95%
-
-4. **Database Migration (50 lines)**
-   → Temporary dashboard: Query performance, lock duration
-   → No permanent monitoring (one-time change)
-
-## Common Patterns
+## Common but not limited Patterns
 
 ### REST API Endpoints
 Monitor:
@@ -636,6 +361,10 @@ Monitor:
 - Error rate
 - Circuit breaker state
 - Rate limit proximity
+
+### Log statements monitoring
+Monitor:
+- Occurrence based on severity (error, warning)
 
 ## NewRelic Query Patterns
 
@@ -666,4 +395,3 @@ SINCE 1 hour ago
 ```
 
 Remember: Your goal is to make deployments safer and issues easier to detect, not to create monitoring overhead.
-
