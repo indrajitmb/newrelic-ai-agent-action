@@ -1,5 +1,5 @@
-# Example workflow file
-# Copy this to any microservice at: .github/workflows/newrelic-ai.yml
+# Example workflow file for NewRelic AI Agent (OpenAI)
+# Copy this to your target repository at: .github/workflows/newrelic-ai.yml
 
 name: NewRelic AI Analysis
 
@@ -7,39 +7,72 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Required permissions for GitHub token (automatically provided)
+permissions:
+  contents: read       # Read repository contents and PR diff
+  pull-requests: write # Post comments on PRs
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read
-      pull-requests: write
+    name: Analyze PR for Observability
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Action Repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for better diff analysis
+          repository: your-org/newrelic-ai-agent-action  # Change to your org/repo
+          ref: main
+          path: .github/actions/newrelic-agent
       
       - name: Run NewRelic AI Agent
-        uses: your-org/newrelic-ai-agent-action@main  # Change to your org
+        uses: ./.github/actions/newrelic-agent
         with:
-          claude-api-key: ${{ secrets.CLAUDE_API_KEY }}
-          newrelic-api-key: ${{ secrets.NEW_RELIC_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          pr-number: ${{ github.event.pull_request.number }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          newrelic-api-key: ${{ secrets.NEWRELIC_API_KEY }}
+          # GITHUB_TOKEN, PR_NUMBER, and GITHUB_REPOSITORY are automatically provided
 
-# Optional: Run only on specific file changes
+# ============================================================
+# Optional Configurations
+# ============================================================
+
+# Option 1: Run only on specific file changes
 # on:
 #   pull_request:
 #     types: [opened, synchronize, reopened]
 #     paths:
-#       - 'app/**'
-#       - 'lib/**'
-#       - 'config/**'
-#       # Add paths you want to monitor
+#       - 'app/**'        # Application code
+#       - 'lib/**'        # Library code
+#       - 'config/**'     # Configuration
+#       - '!**/*.md'      # Exclude markdown files
+#       - '!**/test/**'   # Exclude test files
 
-# Optional: Skip draft PRs
+# Option 2: Skip draft PRs
 # jobs:
 #   analyze:
 #     if: github.event.pull_request.draft == false
+
+# Option 3: Run only on specific branches
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
+#     branches:
+#       - main
+#       - production
+
+# ============================================================
+# Setup Instructions
+# ============================================================
+# 1. Add these secrets in your repository:
+#    Settings → Secrets and variables → Actions → New repository secret
+#    - OPENAI_API_KEY: Your OpenAI API key
+#    - NEWRELIC_API_KEY: Your NewRelic API key
+#
+# 2. Update line 24 with your action repository path
+#
+# 3. Commit this file to your repository at:
+#    .github/workflows/newrelic-ai.yml
+#
+# 4. Create a PR and watch the agent analyze it!
+#
+# Note: GITHUB_TOKEN is automatically provided by GitHub Actions
