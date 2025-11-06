@@ -49,8 +49,7 @@ class NewRelicAIAgent
       break if response_complete?(response)
       
       if response.dig('choices', 0, 'finish_reason') == 'tool_calls'
-        tool_results = execute_tools(response.dig('choices', 0, 'message', 'tool_calls'))
-        @conversation << { role: 'tool', content: tool_results }
+        execute_tools(response.dig('choices', 0, 'message', 'tool_calls'))
       end
       
       iterations += 1
