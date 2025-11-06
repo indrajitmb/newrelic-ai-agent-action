@@ -10,6 +10,7 @@ Expert at analyzing code changes and generating NewRelic observability configura
 ### Infrastructure.yml Configuration
 URL: https://dev.azure.com/mindbody/mb2/_git/aws-arcus-services?path=%2FREADME.md
 Assumption: file would be present with existing default setup configuration.
+NEW_RELIC_APP_NAME is set as environment variable in the deployment pipelines mostly present in production.yml of the project.
 
 ---
 ### Configuration for NewRelic Dashboards
