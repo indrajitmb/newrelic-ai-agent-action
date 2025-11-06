@@ -13,40 +13,226 @@ Assumption: file would be present with existing default setup configuration.
 
 ---
 ### Configuration for NewRelic Dashboards
-```
-# Configuration for New Relic Dashboards. Each array entry may use oneDashboardConfig or oneDashboardTemplateConfig but not both.
+
+**IMPORTANT:** Dashboards can use either `oneDashboardConfig` (custom) or `oneDashboardTemplateConfig` (template-based), but NOT both.
+
+#### Basic Structure
+```yaml
 newrelicDashboards:
-    # The primary name of the dashboard. Dashboards are prefixed with "{serviceName}: " by default. The name becomes the suffix by default.
-  - name: string
-    # Optional - used for configuring a custom dashboard with granular precision
-    # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#inputs for more
+  - name: [Dashboard Name]
     oneDashboardConfig:
-      # Optional - an override for the New Relic account. Defaults to the New Relic account which aligns to the Arcus environment.
-      accountId: number
-      # Optional - a description for the dashboard
-      description: string
-      # Optional - a name override for naming the dashboard
-      name: string
-      # Optional - permissions for the dashboard (manual updates to the dashboard may be overridden based on what's set in the infrastructure configuration)
-      # Valid values are private, public_read_only, or public_read_write. Defaults to public_read_only
-      permissions: string
-      # Optional - A nested block that describes a dashboard-local variable.
-      # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#onedashboardvariable for details
-      variables: OneDashboardVariableArgs[]
-      # The pages of the dashboard.
-      # See https://www.pulumi.com/registry/packages/newrelic/api-docs/onedashboard/#onedashboardpage for more
-      pages: OneDashboardPageArgs[]
-    # Optional - used for configuring a templated dashboard
+      pages:
+        - name: [Page Name]
+          description: [Page Description]
+          widgets:
+            - visualization: [widget_type]
+              dataSource:
+                nrql: [NRQL Query]
+```
+
+#### Visualization Types and When to Use Them
+
+| Visualization | Use Case | Query Pattern |
+|--------------|----------|---------------|
+| `billboard` | Single KPI value (success rate, total count) | `SELECT percentage(...)` or `SELECT count(*)` |
+| `metric_line_chart` | Trends over time (latency, throughput) | `SELECT ... TIMESERIES` or with percentiles |
+| `facet_table` | Grouped data (errors by type, endpoints) | `SELECT ... FACET column` |
+| `bar_chart` | Comparing categories (requests by endpoint) | `SELECT ... FACET column` (without TIMESERIES) |
+| `pie_chart` | Distribution percentages | `SELECT percentage(...) FACET column` |
+| `area_chart` | Stacked trends over time | `SELECT ... FACET column TIMESERIES` |
+
+#### Production Examples
+
+**Example 1: User Creation Observability (Multiple Widgets)**
+```yaml
+newrelicDashboards:
+  - name: User Creation Observability
+    oneDashboardConfig:
+      pages:
+        - name: "User Creation Metrics"
+          description: "Monitors user creation success rates, error types, and API response times."
+          widgets:
+            # Billboard: Single KPI
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT percentage(count(*), WHERE error IS NULL) as 'Success Rate %' FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' SINCE 1 hour ago"
+            
+            # Table: Error breakdown
+            - visualization: "facet_table"
+              dataSource:
+                nrql: "SELECT count(*) as 'Error Count' FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class` SINCE 1 day ago"
+            
+            # Line chart: Performance over time
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' TIMESERIES AUTO"
+            
+            # Bar chart: Top error messages
+            - visualization: "bar_chart"
+              dataSource:
+                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.message` LIMIT 10"
+```
+
+**Example 2: API Endpoint Performance Dashboard**
+```yaml
+newrelicDashboards:
+  - name: API Performance Dashboard
+    oneDashboardConfig:
+      pages:
+        - name: "API Health Overview"
+          description: "Monitor all API endpoints performance and errors"
+          widgets:
+            # Billboard: Total requests
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT count(*) as 'Total API Requests' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' SINCE 1 hour ago"
+            
+            # Billboard: Error rate
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT percentage(count(*), WHERE error IS true) as 'Error Rate %' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' SINCE 1 hour ago"
+            
+            # Line chart: Request rate over time
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: "SELECT rate(count(*), 1 minute) as 'Requests/min' FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' TIMESERIES AUTO"
+            
+            # Pie chart: Traffic distribution by endpoint
+            - visualization: "pie_chart"
+              dataSource:
+                nrql: "SELECT count(*) FROM Transaction WHERE appName = 'YourAppName' AND request.uri LIKE '/api/%' FACET request.uri LIMIT 10"
+```
+
+**Example 3: Background Job Monitoring**
+```yaml
+newrelicDashboards:
+  - name: Sidekiq Job Monitoring
+    oneDashboardConfig:
+      pages:
+        - name: "Job Performance"
+          description: "Monitor background job execution and queue health"
+          widgets:
+            # Billboard: Success rate
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT percentage(count(*), WHERE result = 'success') as 'Job Success Rate %' FROM SidekiqJob SINCE 1 hour ago"
+            
+            # Area chart: Job execution over time by queue
+            - visualization: "area_chart"
+              dataSource:
+                nrql: "SELECT count(*) FROM SidekiqJob FACET queueName TIMESERIES AUTO LIMIT 5"
+            
+            # Table: Queue latency by queue name
+            - visualization: "facet_table"
+              dataSource:
+                nrql: "SELECT latest(latency) as 'Latency (sec)', latest(size) as 'Queue Size' FROM SidekiqQueue FACET queueName"
+            
+            # Bar chart: Failed jobs by worker
+            - visualization: "bar_chart"
+              dataSource:
+                nrql: "SELECT count(*) as 'Failures' FROM SidekiqJob WHERE result = 'failure' FACET workerClass LIMIT 10"
+```
+
+**Example 4: Database Performance Dashboard**
+```yaml
+newrelicDashboards:
+  - name: Database Performance
+    oneDashboardConfig:
+      pages:
+        - name: "Query Performance"
+          description: "Monitor database query performance and slow queries"
+          widgets:
+            # Billboard: Average query time
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT average(duration) * 1000 as 'Avg Query Time (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' SINCE 1 hour ago"
+            
+            # Line chart: Query duration percentiles
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: "SELECT percentile(duration, 50, 95, 99) * 1000 as 'Query Time (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' TIMESERIES AUTO"
+            
+            # Table: Slowest queries
+            - visualization: "facet_table"
+              dataSource:
+                nrql: "SELECT count(*) as 'Count', average(duration) * 1000 as 'Avg (ms)', max(duration) * 1000 as 'Max (ms)' FROM DatabaseQuery WHERE appName = 'YourAppName' FACET query LIMIT 20"
+            
+            # Bar chart: Queries by operation type
+            - visualization: "bar_chart"
+              dataSource:
+                nrql: "SELECT count(*) FROM DatabaseQuery WHERE appName = 'YourAppName' FACET operation SINCE 1 hour ago"
+```
+
+#### Widget Selection Guidelines
+
+**Use `billboard` for:**
+- Success/failure rates
+- Total counts (requests, errors, users)
+- Single important metrics (SLO compliance %)
+- Real-time status indicators
+
+**Use `metric_line_chart` for:**
+- Performance trends (latency, duration)
+- Throughput over time
+- Resource usage trends
+- Any metric with `TIMESERIES`
+
+**Use `facet_table` for:**
+- Detailed breakdowns with multiple columns
+- Error types and counts
+- Queue latency details
+- Top N items with multiple metrics
+
+**Use `bar_chart` for:**
+- Comparing discrete categories
+- Top endpoints by traffic
+- Error counts by type (without time series)
+- Distribution across categories
+
+**Use `pie_chart` for:**
+- Showing percentage distribution
+- Traffic split by endpoint
+- Error type distribution
+- Status code breakdown
+
+**Use `area_chart` for:**
+- Multiple series stacked over time
+- Queue sizes by queue name over time
+- Traffic by region over time
+
+#### Original Simple Example
+```yaml
+newrelicDashboards:
+  - name: User Creation Observability
+    oneDashboardConfig:
+      pages:
+        - name: "User Creation Metrics"
+          description: "Monitors user creation success rates, error types, and API response times."
+          widgets:
+            - visualization: "facet_table"
+              dataSource:
+                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class`"
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users'"
+```
+
+#### Template-Based Dashboard (Alternative)
+For standard metrics, use templates:
+```yaml
+newrelicDashboards:
+  - name: Service Monitoring
     oneDashboardTemplateConfig:
-      # The identifier for the template being used. Must be a file named with the format "{templateName}.ts" in
-      # https://mindbody.visualstudio.com/mb2/_git/mbx-plugin-newrelic-dashboards?path=/src/templates/oneDashboard
-      # Currently, the valid values are service_basics_1, business_experience_page_basics, or default_k8s_basics
-      templateName: string
-      # Optional - key value pairs for replacing particular strings in the template. Used for customizing templates
-      # See the mbx-plugin-newrelic-dashboards README for example usage:
-      # https://mindbody.visualstudio.com/mb2/_git/mbx-plugin-newrelic-dashboards?path=/README.md&_a=preview&anchor=arcus-services-configuration-example
+      templateName: service_basics_1
       stringFindAndReplace:
-        key: value
+        APP_NAME: YourAppName
+        ENVIRONMENT: production
+```
+
+**Available Templates:**
+- `service_basics_1` - Basic service metrics (requests, errors, latency)
+- `business_experience_page_basics` - User experience metrics
+- `default_k8s_basics` - Kubernetes deployment metrics
 ```
 
 ### Alert Configuration Format
@@ -280,7 +466,6 @@ Structure your final response as GitHub-flavored markdown:
 **Recommendation:** [Create / Skip]
 
 [If Create:]
-- **Duration:** 7 days post-merge
 - **Focus:** [Key metrics to watch during rollout]
 - **Files:**
   - `temp/pr-{number}-monitoring.yml` - Reference file
@@ -293,15 +478,100 @@ Structure your final response as GitHub-flavored markdown:
 ## 📈 Permanent Observability Suggestions
 
 [If applicable:]
-### New Charts
+### New Dashboards
+**IMPORTANT:** Choose appropriate visualization types for each metric!
+
 Add to `infrastructure.yml`:
 ```yaml
-[Formatted config following platform schema]
+newrelicDashboards:
+  - name: [Dashboard Name]
+    oneDashboardConfig:
+      pages:
+        - name: [Page Name]
+          description: [What this dashboard monitors]
+          widgets:
+            # Use billboard for key metrics (success rate, total count)
+            - visualization: "billboard"
+              dataSource:
+                nrql: [Single value KPI query]
+            
+            # Use facet_table for detailed breakdowns
+            - visualization: "facet_table"
+              dataSource:
+                nrql: [Query with FACET for grouped data]
+            
+            # Use metric_line_chart for trends over time
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: [Query with TIMESERIES for time-based trends]
+            
+            # Use bar_chart for categorical comparisons
+            - visualization: "bar_chart"
+              dataSource:
+                nrql: [Query with FACET, no TIMESERIES]
+```
+
+**Complete Example with Multiple Widget Types:**
+```yaml
+newrelicDashboards:
+  - name: User Creation Observability
+    oneDashboardConfig:
+      pages:
+        - name: "User Creation Metrics"
+          description: "Monitors user creation success rates, error types, and API response times."
+          widgets:
+            # Billboard: Success rate KPI
+            - visualization: "billboard"
+              dataSource:
+                nrql: "SELECT percentage(count(*), WHERE error IS NULL) as 'Success Rate %' FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' SINCE 1 hour ago"
+            
+            # Table: Error breakdown with counts
+            - visualization: "facet_table"
+              dataSource:
+                nrql: "SELECT count(*) as 'Error Count' FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.class` SINCE 1 day ago"
+            
+            # Line chart: Performance trends
+            - visualization: "metric_line_chart"
+              dataSource:
+                nrql: "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'YourAppName' AND name = 'POST /api/users' TIMESERIES AUTO"
+            
+            # Bar chart: Top errors
+            - visualization: "bar_chart"
+              dataSource:
+                nrql: "SELECT count(*) FROM TransactionError WHERE appName = 'YourAppName' AND transactionName = 'POST /api/users' FACET `error.message` LIMIT 10"
 ```
 
 ### New Alerts
 **CRITICAL:** Use ONLY the exact format specified in "Alert Configuration Format" section above.
 **GUIDELINE:** Be conservative on warning and critical thresholds.
+
+```yaml
+nrqlAlertConditions:
+  - name: [Clear alert name]
+    description: [What this monitors]
+    type: static
+    enabled: true
+    valueFunction: single_value
+    aggregationMethod: EVENT_FLOW
+    aggregationDelay: 20
+    aggregationWindow: 60
+    fillOption: NONE
+    violationTimeLimitSeconds: 1800
+    runbookUrl: NA
+    nrql:
+      query:
+        [Your NRQL query here]
+    warning:
+      operator: above
+      threshold: [number]
+      thresholdDuration: [number]
+      thresholdOccurrences: ALL
+    critical:
+      operator: above
+      threshold: [number]
+      thresholdDuration: 60
+      thresholdOccurrences: ALL
+```
 
 [If not applicable:]
 No permanent monitoring needed - existing observability is sufficient.
