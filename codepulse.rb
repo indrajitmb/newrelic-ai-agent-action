@@ -101,15 +101,7 @@ class NewRelicAIAgent
 
       ## 📋 MANDATORY ANALYSIS WORKFLOW:
 
-      ### Phase 1: App Name Detection (CRITICAL - DO THIS FIRST)
-      1. Call `get_newrelic_app_name` immediately
-      2. If it fails or returns multiple matches:
-         - Note the issue clearly
-         - Pick the most relevant match if suggestions exist
-         - Proceed with that name (we can refine later)
-      3. Store the app name and use it in EVERY subsequent NRQL query
-
-      ### Phase 2: Deep Code Analysis (Be Thorough)
+      ### Phase 1: Deep Code Analysis (Be Thorough)
       1. Call `get_pr_diff` to understand all changes
       2. For EACH modified file (yes, every single one):
          a. Call `analyze_file` to get full context
@@ -122,7 +114,7 @@ class NewRelicAIAgent
             - Business logic changes
             - Error handling patterns
 
-      ### Phase 3: Dependency Impact Analysis (New Requirement)
+      ### Phase 2: Dependency Impact Analysis (New Requirement)
       For EACH significant class/method change:
       1. Call `find_dependent_code` with class name
       2. Note the impact level (Low/Medium/High/Critical)
@@ -131,20 +123,20 @@ class NewRelicAIAgent
          - Consider cascade failure scenarios
          - Add dependent service monitoring
 
-      ### Phase 4: Learn from Existing Patterns
+      ### Phase 3: Learn from Existing Patterns
       1. Call `learn_from_existing_dashboards` with the detected app name
       2. Note the common patterns in existing dashboards
       3. Match your recommendations to existing style
       4. Identify and fill any gaps
 
-      ### Phase 5: Baseline Metrics (Important Context)
+      ### Phase 4: Baseline Metrics (Important Context)
       1. Call `query_newrelic` to get baseline metrics:
          - Current error rate: SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = 'APP_NAME' SINCE 7 days ago
          - Current throughput: SELECT count(*) FROM Transaction WHERE appName = 'APP_NAME' SINCE 7 days ago
          - Average response time: SELECT average(duration) FROM Transaction WHERE appName = 'APP_NAME' SINCE 7 days ago
       2. Use these baselines to set realistic alert thresholds
 
-      ### Phase 6: Comprehensive Config Generation
+      ### Phase 5: Comprehensive Config Generation
       Now generate monitoring that covers:
 
       #### A. Dashboards (Aim for 8-15 widgets per dashboard)
@@ -247,7 +239,7 @@ class NewRelicAIAgent
 
       ## 🚀 START YOUR ANALYSIS:
 
-      Begin by calling `get_newrelic_app_name` right now. Then work through each phase systematically.
+      Work through each phase systematically.
 
       Remember: Better to over-monitor and dial back than to miss a critical production issue.
       Your recommendations could prevent a 2 AM outage!
