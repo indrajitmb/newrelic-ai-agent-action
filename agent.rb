@@ -14,7 +14,8 @@ class NewRelicAIAgent
   def initialize
     @claude = Anthropic::Client.new(api_key: ENV['CLAUDE_API_KEY'])
     @github = Octokit::Client.new(access_token: ENV['GITHUB_TOKEN'])
-    @context = ContextLoader.load_context
+    @app_name = ContextLoader.fetch_app_name_from_production_yaml(@github)
+    @context = ContextLoader.load_context(app_name: @app_name, github_client: @github)
     @conversation = []
     @tools = Tools.new(
       github: @github,
@@ -79,6 +80,10 @@ class NewRelicAIAgent
   def build_initial_prompt(pr_info)
     <<~PROMPT
       You are a NewRelic observability expert analyzing a pull request. Your task is to determine what observability is needed.
+      
+      ## Application Information:
+      - **Application Name**: #{@app_name}
+      - **IMPORTANT**: Use "appName = '#{@app_name}'" in all NRQL queries
       
       ## Your Objectives:
       

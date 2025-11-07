@@ -8,20 +8,20 @@ class Tools
   
   def definitions
     [
-      {
-        name: 'get_newrelic_app_name',
-        description: 'Detect the correct NewRelic application name for this repository. MUST be called FIRST before any NRQL queries.',
-        input_schema: {
-          type: 'object',
-          properties: {
-            repo_name: {
-              type: 'string',
-              description: 'Repository name to search for (optional, uses current repo if not provided)'
-            }
-          },
-          required: []
-        }
-      },
+      # {
+      #   name: 'get_newrelic_app_name',
+      #   description: 'Detect the correct NewRelic application name for this repository.',
+      #   input_schema: {
+      #     type: 'object',
+      #     properties: {
+      #       repo_name: {
+      #         type: 'string',
+      #         description: 'Repository name to search for (optional, uses current repo if not provided)'
+      #       }
+      #     },
+      #     required: []
+      #   }
+      # },
       {
         name: 'get_pr_diff',
         description: 'Get the full diff of PR changes to understand what code was added, modified, or removed',
@@ -77,38 +77,38 @@ class Tools
           required: ['class_name']
         }
       },
-      {
-        name: 'learn_from_existing_dashboards',
-        description: 'Analyze existing NewRelic dashboards to understand current monitoring patterns and match style',
-        input_schema: {
-          type: 'object',
-          properties: {
-            app_name: {
-              type: 'string',
-              description: 'Application name to search dashboards for'
-            }
-          },
-          required: ['app_name']
-        }
-      },
-      {
-        name: 'query_newrelic',
-        description: 'Execute a NRQL query against NewRelic to check existing monitoring or baseline metrics',
-        input_schema: {
-          type: 'object',
-          properties: {
-            nrql: { 
-              type: 'string', 
-              description: 'NRQL query to execute. MUST include appName filter using the name from get_newrelic_app_name tool.' 
-            },
-            account_id: {
-              type: 'string',
-              description: 'NewRelic account ID (optional, uses default if not provided)'
-            }
-          },
-          required: ['nrql']
-        }
-      },
+      # {
+      #   name: 'learn_from_existing_dashboards',
+      #   description: 'Analyze existing NewRelic dashboards to understand current monitoring patterns and match style',
+      #   input_schema: {
+      #     type: 'object',
+      #     properties: {
+      #       app_name: {
+      #         type: 'string',
+      #         description: 'Application name to search dashboards for'
+      #       }
+      #     },
+      #     required: ['app_name']
+      #   }
+      # },
+      # {
+      #   name: 'query_newrelic',
+      #   description: 'Execute a NRQL query against NewRelic to check existing monitoring or baseline metrics',
+      #   input_schema: {
+      #     type: 'object',
+      #     properties: {
+      #       nrql: {
+      #         type: 'string',
+      #         description: 'NRQL query to execute. MUST include appName filter'
+      #       },
+      #       account_id: {
+      #         type: 'string',
+      #         description: 'NewRelic account ID (optional, uses default if not provided)'
+      #       }
+      #     },
+      #     required: ['nrql']
+      #   }
+      # },
       {
         name: 'check_existing_infrastructure',
         description: 'Check if infrastructure.yml exists in the repository and read its current configuration',
@@ -177,8 +177,8 @@ class Tools
   
   def execute(tool_name, input)
     case tool_name
-    when 'get_newrelic_app_name'
-      get_newrelic_app_name(input['repo_name'])
+    # when 'get_newrelic_app_name'
+    #   get_newrelic_app_name(input['repo_name'])
     when 'get_pr_diff'
       get_pr_diff
     when 'analyze_file'
@@ -187,10 +187,10 @@ class Tools
       analyze_log_statements(input['file_content'])
     when 'find_dependent_code'
       find_dependent_code(input['class_name'], input['method_name'])
-    when 'learn_from_existing_dashboards'
-      learn_from_existing_dashboards(input['app_name'])
-    when 'query_newrelic'
-      query_newrelic(input['nrql'], input['account_id'])
+    # when 'learn_from_existing_dashboards'
+    #   learn_from_existing_dashboards(input['app_name'])
+    # when 'query_newrelic'
+    #   query_newrelic(input['nrql'], input['account_id'])
     when 'check_existing_infrastructure'
       check_existing_infrastructure(input['path'] || 'infrastructure.yml')
     when 'create_temp_dashboard_files'
@@ -214,99 +214,99 @@ class Tools
   private
   
   # NEW TOOL: Detect correct NewRelic app name
-  def get_newrelic_app_name(repo_name = nil)
-    repo_name ||= @repo.split('/').last
+  # def get_newrelic_app_name(repo_name = nil)
+  #   repo_name ||= @repo.split('/').last
     
-    # Query NewRelic for matching application names
-    graphql_query = <<~GRAPHQL
-      {
-        actor {
-          entitySearch(query: "domain = 'APM' AND type = 'APPLICATION'") {
-            results {
-              entities {
-                name
-                guid
-                domain
-                ... on ApmApplicationEntityOutline {
-                  applicationId
-                }
-              }
-            }
-          }
-        }
-      }
-    GRAPHQL
+  #   # Query NewRelic for matching application names
+  #   graphql_query = <<~GRAPHQL
+  #     {
+  #       actor {
+  #         entitySearch(query: "domain = 'APM' AND type = 'APPLICATION'") {
+  #           results {
+  #             entities {
+  #               name
+  #               guid
+  #               domain
+  #               ... on ApmApplicationEntityOutline {
+  #                 applicationId
+  #               }
+  #             }
+  #           }
+  #         }
+  #       }
+  #     }
+  #   GRAPHQL
     
-    conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
-      f.request :json
-      f.response :json
-      f.adapter Faraday.default_adapter
-    end
+  #   conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
+  #     f.request :json
+  #     f.response :json
+  #     f.adapter Faraday.default_adapter
+  #   end
     
-    response = conn.post do |req|
-      req.headers['API-Key'] = @nr_key
-      req.headers['Content-Type'] = 'application/json'
-      req.body = { query: graphql_query }
-    end
+  #   response = conn.post do |req|
+  #     req.headers['API-Key'] = @nr_key
+  #     req.headers['Content-Type'] = 'application/json'
+  #     req.body = { query: graphql_query }
+  #   end
     
-    if response.success?
-      entities = response.body.dig('data', 'actor', 'entitySearch', 'results', 'entities') || []
+  #   if response.success?
+  #     entities = response.body.dig('data', 'actor', 'entitySearch', 'results', 'entities') || []
       
-      # Try exact match
-      exact_match = entities.find { |e| e['name'].downcase == repo_name.downcase }
-      if exact_match
-        return {
-          success: true,
-          app_name: exact_match['name'],
-          guid: exact_match['guid'],
-          application_id: exact_match['applicationId'],
-          match_type: 'exact'
-        }
-      end
+  #     # Try exact match
+  #     exact_match = entities.find { |e| e['name'].downcase == repo_name.downcase }
+  #     if exact_match
+  #       return {
+  #         success: true,
+  #         app_name: exact_match['name'],
+  #         guid: exact_match['guid'],
+  #         application_id: exact_match['applicationId'],
+  #         match_type: 'exact'
+  #       }
+  #     end
       
-      # Try fuzzy match (contains repo name)
-      fuzzy_matches = entities.select { |e| e['name'].downcase.include?(repo_name.downcase) }
+  #     # Try fuzzy match (contains repo name)
+  #     fuzzy_matches = entities.select { |e| e['name'].downcase.include?(repo_name.downcase) }
       
-      if fuzzy_matches.length == 1
-        match = fuzzy_matches.first
-        return {
-          success: true,
-          app_name: match['name'],
-          guid: match['guid'],
-          application_id: match['applicationId'],
-          match_type: 'fuzzy',
-          confidence: 'high'
-        }
-      elsif fuzzy_matches.length > 1
-        return {
-          success: false,
-          error: "Multiple matches found",
-          suggestions: fuzzy_matches.map { |e| e['name'] },
-          message: "Please manually specify which app to monitor. Add app name to repository description or use most relevant match."
-        }
-      else
-        return {
-          success: false,
-          error: "No matching application found in NewRelic",
-          searched_for: repo_name,
-          available_apps: entities.map { |e| e['name'] }.first(10),
-          message: "The repository name doesn't match any NewRelic application. Check if the app is reporting to NewRelic or use a different search term."
-        }
-      end
-    else
-      { 
-        success: false,
-        error: "NewRelic API error: #{response.status}",
-        details: response.body 
-      }
-    end
-  rescue => e
-    { 
-      success: false,
-      error: "Failed to detect app name: #{e.message}",
-      backtrace: e.backtrace.first(3)
-    }
-  end
+  #     if fuzzy_matches.length == 1
+  #       match = fuzzy_matches.first
+  #       return {
+  #         success: true,
+  #         app_name: match['name'],
+  #         guid: match['guid'],
+  #         application_id: match['applicationId'],
+  #         match_type: 'fuzzy',
+  #         confidence: 'high'
+  #       }
+  #     elsif fuzzy_matches.length > 1
+  #       return {
+  #         success: false,
+  #         error: "Multiple matches found",
+  #         suggestions: fuzzy_matches.map { |e| e['name'] },
+  #         message: "Please manually specify which app to monitor. Add app name to repository description or use most relevant match."
+  #       }
+  #     else
+  #       return {
+  #         success: false,
+  #         error: "No matching application found in NewRelic",
+  #         searched_for: repo_name,
+  #         available_apps: entities.map { |e| e['name'] }.first(10),
+  #         message: "The repository name doesn't match any NewRelic application. Check if the app is reporting to NewRelic or use a different search term."
+  #       }
+  #     end
+  #   else
+  #     {
+  #       success: false,
+  #       error: "NewRelic API error: #{response.status}",
+  #       details: response.body
+  #     }
+  #   end
+  # rescue => e
+  #   {
+  #     success: false,
+  #     error: "Failed to detect app name: #{e.message}",
+  #     backtrace: e.backtrace.first(3)
+  #   }
+  # end
   
   # NEW TOOL: Analyze log statements
   def analyze_log_statements(file_content)
@@ -450,74 +450,74 @@ class Tools
   end
   
   # NEW TOOL: Learn from existing dashboards
-  def learn_from_existing_dashboards(app_name)
-    # Query for existing dashboards
-    graphql_query = <<~GRAPHQL
-      {
-        actor {
-          entitySearch(query: "domain = 'VIZ' AND type = 'DASHBOARD'") {
-            results {
-              entities {
-                name
-                guid
-                ... on DashboardEntityOutline {
-                  dashboardParentGuid
-                }
-              }
-            }
-          }
-        }
-      }
-    GRAPHQL
+  # def learn_from_existing_dashboards(app_name)
+  #   # Query for existing dashboards
+  #   graphql_query = <<~GRAPHQL
+  #     {
+  #       actor {
+  #         entitySearch(query: "domain = 'VIZ' AND type = 'DASHBOARD'") {
+  #           results {
+  #             entities {
+  #               name
+  #               guid
+  #               ... on DashboardEntityOutline {
+  #                 dashboardParentGuid
+  #               }
+  #             }
+  #           }
+  #         }
+  #       }
+  #     }
+  #   GRAPHQL
     
-    conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
-      f.request :json
-      f.response :json
-      f.adapter Faraday.default_adapter
-    end
+  #   conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
+  #     f.request :json
+  #     f.response :json
+  #     f.adapter Faraday.default_adapter
+  #   end
     
-    response = conn.post do |req|
-      req.headers['API-Key'] = @nr_key
-      req.headers['Content-Type'] = 'application/json'
-      req.body = { query: graphql_query }
-    end
+  #   response = conn.post do |req|
+  #     req.headers['API-Key'] = @nr_key
+  #     req.headers['Content-Type'] = 'application/json'
+  #     req.body = { query: graphql_query }
+  #   end
     
-    if response.success?
-      dashboards = response.body.dig('data', 'actor', 'entitySearch', 'results', 'entities') || []
+  #   if response.success?
+  #     dashboards = response.body.dig('data', 'actor', 'entitySearch', 'results', 'entities') || []
       
-      # Filter for relevant dashboards (containing app name or common terms)
-      relevant_dashboards = dashboards.select do |d|
-        name_lower = d['name'].downcase
-        name_lower.include?(app_name.downcase) || 
-        name_lower.include?('api') ||
-        name_lower.include?('service') ||
-        name_lower.include?('application')
-      end
+  #     # Filter for relevant dashboards (containing app name or common terms)
+  #     relevant_dashboards = dashboards.select do |d|
+  #       name_lower = d['name'].downcase
+  #       name_lower.include?(app_name.downcase) ||
+  #       name_lower.include?('api') ||
+  #       name_lower.include?('service') ||
+  #       name_lower.include?('application')
+  #     end
       
-      patterns = extract_common_patterns(relevant_dashboards)
+  #     patterns = extract_common_patterns(relevant_dashboards)
       
-      {
-        success: true,
-        total_dashboards_found: relevant_dashboards.length,
-        dashboards: relevant_dashboards.first(5).map { |d| { name: d['name'], guid: d['guid'] } },
-        common_patterns: patterns,
-        style_recommendations: derive_style_recommendations(patterns),
-        gaps_identified: identify_monitoring_gaps(patterns)
-      }
-    else
-      { 
-        success: false,
-        error: "Failed to fetch dashboards: #{response.status}",
-        default_action: "Use standard monitoring patterns from documentation"
-      }
-    end
-  rescue => e
-    { 
-      success: false,
-      error: "Failed to learn from dashboards: #{e.message}",
-      default_action: "Proceed with standard monitoring recommendations"
-    }
-  end
+  #     {
+  #       success: true,
+  #       total_dashboards_found: relevant_dashboards.length,
+  #       dashboards: relevant_dashboards.first(5).map { |d| { name: d['name'], guid: d['guid'] } },
+  #       common_patterns: patterns,
+  #       style_recommendations: derive_style_recommendations(patterns),
+  #       gaps_identified: identify_monitoring_gaps(patterns)
+  #     }
+  #   else
+  #     {
+  #       success: false,
+  #       error: "Failed to fetch dashboards: #{response.status}",
+  #       default_action: "Use standard monitoring patterns from documentation"
+  #     }
+  #   end
+  # rescue => e
+  #   {
+  #     success: false,
+  #     error: "Failed to learn from dashboards: #{e.message}",
+  #     default_action: "Proceed with standard monitoring recommendations"
+  #   }
+  # end
   
   def extract_common_patterns(dashboards)
     {
@@ -597,38 +597,38 @@ class Tools
     { error: "Failed to read file: #{e.message}" }
   end
   
-  def query_newrelic(nrql, account_id = nil)
-    # NewRelic NerdGraph API
-    conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
-      f.request :json
-      f.response :json
-      f.adapter Faraday.default_adapter
-    end
+  # def query_newrelic(nrql, account_id = nil)
+  #   # NewRelic NerdGraph API
+  #   conn = Faraday.new(url: 'https://api.newrelic.com/graphql') do |f|
+  #     f.request :json
+  #     f.response :json
+  #     f.adapter Faraday.default_adapter
+  #   end
     
-    graphql_query = <<~GRAPHQL
-      {
-        actor {
-          nrql(query: "#{nrql.gsub('"', '\\"')}") {
-            results
-          }
-        }
-      }
-    GRAPHQL
+  #   graphql_query = <<~GRAPHQL
+  #     {
+  #       actor {
+  #         nrql(query: "#{nrql.gsub('"', '\\"')}") {
+  #           results
+  #         }
+  #       }
+  #     }
+  #   GRAPHQL
     
-    response = conn.post do |req|
-      req.headers['API-Key'] = @nr_key
-      req.headers['Content-Type'] = 'application/json'
-      req.body = { query: graphql_query }
-    end
+  #   response = conn.post do |req|
+  #     req.headers['API-Key'] = @nr_key
+  #     req.headers['Content-Type'] = 'application/json'
+  #     req.body = { query: graphql_query }
+  #   end
     
-    if response.success?
-      response.body
-    else
-      { error: "NewRelic API error: #{response.status} - #{response.body}" }
-    end
-  rescue => e
-    { error: "Failed to query NewRelic: #{e.message}" }
-  end
+  #   if response.success?
+  #     response.body
+  #   else
+  #     { error: "NewRelic API error: #{response.status} - #{response.body}" }
+  #   end
+  # rescue => e
+  #   { error: "Failed to query NewRelic: #{e.message}" }
+  # end
   
   def check_existing_infrastructure(path = 'infrastructure.yml')
     begin
