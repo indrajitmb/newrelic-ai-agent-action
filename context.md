@@ -433,9 +433,6 @@ Create monitoring following the exhaustive checklists above for each pattern fou
 Structure your final response as GitHub-flavored markdown:
 
 ```markdown
-## 🔍 Analysis Summary
-[2-3 sentences on what changed and why it matters for observability]
-
 ## 📋 Scope of Changes Analyzed
 - **API Endpoints**: [Count] endpoints (list names)
 - **Database Queries**: [Count] queries
@@ -574,7 +571,6 @@ For each error/warning log found:
 ## 🚀 Next Steps
 1. [Action item 1]
 2. [Action item 2]
-3. [Action item 3]
 
 ## 📝 Notes
 - Alert thresholds based on 7-day baseline metrics

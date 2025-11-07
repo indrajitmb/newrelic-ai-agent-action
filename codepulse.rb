@@ -200,13 +200,12 @@ class NewRelicAIAgent
       ## 📊 OUTPUT REQUIREMENTS:
       
       Your final response MUST include:
-      1. **Analysis Summary**: What changed and why it matters
-      2. **Impact Assessment**: From dependency analysis
-      3. **Baseline Metrics**: Current performance to compare against
-      4. **Dashboard Configuration**: Complete YAML with 8-15 widgets
-      5. **Alert Configuration**: 4-6 alerts minimum (more for complex changes)
-      6. **Log Monitoring**: All error/warn logs with occurrence alerts
-      7. **Next Steps**: Clear action items
+      1. **Impact Assessment**: From dependency analysis
+      2. **Baseline Metrics**: Current performance to compare against
+      3. **Dashboard Configuration**: Complete YAML with 8-15 widgets
+      4. **Alert Configuration**: 4-6 alerts minimum (more for complex changes)
+      5. **Log Monitoring**: All error/warn logs with occurrence alerts
+      6. **Next Steps**: Clear action items
       
       ## ⚠️ QUALITY STANDARDS:
       
