@@ -8,7 +8,7 @@ require_relative 'lib/tools'
 require_relative 'lib/context_loader'
 
 class NewRelicAIAgent
-  MAX_ITERATIONS = 20  # Increased for more comprehensive analysis
+  MAX_ITERATIONS = 15
   SMALL_PR_THRESHOLD = 50 # lines changed
   
   def initialize
@@ -23,7 +23,7 @@ class NewRelicAIAgent
   end
   
   def run
-    puts "🤖 Starting NewRelic AI Agent (Enhanced Mode)..."
+    puts "🤖 Starting NewRelic AI Agent..."
     pr_info = get_pr_info
     puts "📊 Analyzing PR ##{pr_info[:number]}: #{pr_info[:title]}"
     puts "📝 Changes: #{pr_info[:changes]} lines across #{pr_info[:files]} files"
@@ -85,11 +85,11 @@ class NewRelicAIAgent
   
   def build_initial_prompt(pr_info)
     <<~PROMPT
-      You are a NewRelic observability expert. Your goal is COMPREHENSIVE and EXHAUSTIVE observability coverage.
+      You are a NewRelic observability expert. Your goal is COMPREHENSIVE observability coverage.
       
       ## 🎯 CRITICAL MISSION OBJECTIVES:
       
-      Your analysis MUST be exhaustive. This is NOT about minimal monitoring - it's about comprehensive coverage that prevents production incidents.
+      This is NOT about minimal monitoring - it's about comprehensive coverage that prevents production incidents.
       
       ### Mission Statement:
       "Generate monitoring that would make a production engineer confident to deploy this change at 2 AM on Friday before a holiday weekend."
