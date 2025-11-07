@@ -433,33 +433,14 @@ Create monitoring following the exhaustive checklists above for each pattern fou
 Structure your final response as GitHub-flavored markdown:
 
 ```markdown
-## 📋 Scope of Changes Analyzed
-- **API Endpoints**: [Count] endpoints (list names)
-- **Database Queries**: [Count] queries
-- **Background Jobs**: [Count] jobs
-- **External APIs**: [Count] integrations
-- **Log Statements**: [Count] error logs, [Count] warning logs
-- **Classes Modified**: [Count] with impact levels
-
 ## 🎯 Dependency Impact Assessment
 **Impact Level**: [Low/Medium/High/Critical]
 **References Found**: [Number] code references
 **Monitoring Priority**: [P0/P1/P2]
 
-Details:
-- [List key dependencies]
-- [Impact on downstream services]
-- [Cascade failure risks]
-
-## 📊 Baseline Metrics (from last 7 days)
-- Current Error Rate: [X%]
-- Average Throughput: [X req/min]
-- P95 Latency: [Xms]
-- Baseline used for alert thresholds
-
 ## 📈 Permanent Observability Configuration
 
-### New Dashboards
+### Release monitoring Dashboards
 
 Add to `infrastructure.yml`:
 ```yaml
@@ -571,14 +552,6 @@ For each error/warning log found:
 ## 🚀 Next Steps
 1. [Action item 1]
 2. [Action item 2]
-
-## 📝 Notes
-- Alert thresholds based on 7-day baseline metrics
-- Dashboard includes [X] widgets covering all change patterns
-- [X] alerts configured with progressive escalation
-- Log monitoring covers all error and warning statements
-```
-
 ---
 
 ## Important Guidelines
@@ -590,7 +563,7 @@ For each error/warning log found:
 - **Think Ahead** - Anticipate what will break and how to detect it
 - **Use Baselines** - Base thresholds on actual data, not guesses
 - **Document Impact** - Explain dependency analysis clearly
-- **Cover All Logs** - Every error/warn log needs monitoring
+- **Cover Logs** - Every meaningful error/warn log can be part of release monitoring
 
 ---
 
