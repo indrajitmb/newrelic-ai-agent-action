@@ -1,22 +1,22 @@
 #!/usr/bin/env ruby
 
-# Local testing script for NewRelic AI Agent
-# Usage: ruby test_local.rb
+# Local testing script for NewRelic AI Agent (OpenAI version)
+# Usage: ruby test_local2.rb
 
-require_relative 'agent'
+require_relative 'codepulse'
 
-puts "🧪 NewRelic AI Agent - Local Test Mode"
+puts "🧪 NewRelic AI Agent - Local Test Mode (OpenAI)"
 puts "=" * 50
 
 # Check environment variables
-required_vars = ['CLAUDE_API_KEY', 'NEWRELIC_API_KEY', 'GITHUB_TOKEN', 'GITHUB_REPOSITORY', 'PR_NUMBER']
+required_vars = ['OPENAI_API_KEY', 'NEWRELIC_API_KEY', 'GITHUB_TOKEN', 'GITHUB_REPOSITORY', 'PR_NUMBER']
 missing_vars = required_vars.select { |var| ENV[var].nil? || ENV[var].empty? }
 
 if missing_vars.any?
   puts "❌ Missing required environment variables:"
   missing_vars.each { |var| puts "   - #{var}" }
   puts "\n📝 Set them like this:"
-  puts "export CLAUDE_API_KEY='your-key'"
+  puts "export OPENAI_API_KEY='your-key'"
   puts "export NEWRELIC_API_KEY='your-key'"
   puts "export GITHUB_TOKEN='your-token'"
   puts "export GITHUB_REPOSITORY='your-org/your-repo'"
@@ -42,3 +42,4 @@ rescue => e
   puts e.backtrace.join("\n")
   exit 1
 end
+
