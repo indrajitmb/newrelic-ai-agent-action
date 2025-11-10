@@ -326,16 +326,6 @@ class NewRelicAIAgent
       ---
 
       #{final_message}
-
-      ---
-
-      💡 **Pro Tips:**
-      - Alert thresholds are based on baseline metrics - adjust based on your SLOs
-      - Dashboard widgets use recommended visualization types for each metric
-      - Log-based alerts help catch issues before they escalate
-      - Dependency monitoring helps identify cascade failures early
-
-      🔄 **To Re-Run Analysis:** Comment "Constant Vigilance" on this PR
     COMMENT
     
     puts "\n📤 Posting results to PR..."
