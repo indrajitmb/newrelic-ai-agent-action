@@ -123,10 +123,6 @@ The agent posts a comment on your PR like this:
 ```markdown
 🤖 NewRelic AI Agent - Observability Analysis
 
-## 🔍 Analysis Summary
-This PR adds a new `/api/users/profile` endpoint with database queries.
-Changes: 127 lines across 4 files
-
 ## 📊 Temporary Dashboard (For This PR)
 **Recommendation:** Create
 
